@@ -68,7 +68,7 @@ export function DataTable<TData, TValue>({
 
   return (
     <div className="space-y-4 w-full">
-      
+
       {/* Toolbar */}
       <DataTableToolbar table={table} searchKey={searchKey} />
 
@@ -121,7 +121,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* NEW PAGINATION (2-ROW UBER STYLE) */}
-      <DataTablePagination table={table} />
+      {/* <DataTablePagination table={table} /> */}
     </div>
   )
 }

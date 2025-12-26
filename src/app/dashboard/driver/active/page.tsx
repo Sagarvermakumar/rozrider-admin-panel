@@ -1,15 +1,19 @@
-import { Metadata } from "next";
+'use client';
 
 import { columns } from "./columns";
-import { activeDrivers } from "./data";
 import { DataTable } from "@/components/ui/data-table/data-table";
+import { useGetDriversQuery } from "@/redux/services/adminApi";
 
-export const metadata: Metadata = {
-    title: "Active Drivers",
-    description: "View and manage active drivers.",
-};
+export default function ActiveDriversPage() {
+    const { data, isLoading } = useGetDriversQuery(undefined);
 
-export default async function ActiveDriversPage() {
+    if (isLoading) {
+        return <div className="p-8">Loading drivers...</div>;
+    }
+
+    // Determine data structure
+    const allDrivers = Array.isArray(data) ? data : (data?.drivers || data?.data || []);
+
     return (
         <div className="h-full flex-1 flex-col space-y-8 p-8 md:flex">
             <div className="flex items-center justify-between space-y-2">
@@ -21,7 +25,7 @@ export default async function ActiveDriversPage() {
                 </div>
             </div>
             <DataTable
-                data={activeDrivers}
+                data={allDrivers}
                 columns={columns}
                 searchKey="name"
             />

@@ -9,6 +9,9 @@ import {
   Sparkles,
   UserLockIcon,
 } from "lucide-react";
+import { useRouter } from "next/navigation";
+import { useLogoutMutation } from "@/redux/services/adminApi";
+import { toast } from "sonner";
 
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
@@ -38,6 +41,23 @@ export function NavUser({
   };
 }) {
   const { isMobile } = useSidebar();
+  const router = useRouter();
+  const [logout] = useLogoutMutation();
+
+  const handleLogout = async () => {
+    try {
+      await logout(undefined).unwrap();
+      localStorage.removeItem('token');
+      document.cookie = "token=; path=/; max-age=0";
+      toast.success("Logged out successfully");
+      router.push("/auth/login");
+    } catch (error) {
+      // Even if API fails, clear local state
+      localStorage.removeItem('token');
+      document.cookie = "token=; path=/; max-age=0";
+      router.push("/auth/login");
+    }
+  };
 
   return (
     <SidebarMenu>
@@ -100,7 +120,7 @@ export function NavUser({
               </DropdownMenuItem>
             </DropdownMenuGroup>
             <DropdownMenuSeparator />
-            <DropdownMenuItem>
+            <DropdownMenuItem onClick={handleLogout}>
               <LogOut className="mr-2 size-4" />
               Log out
             </DropdownMenuItem>

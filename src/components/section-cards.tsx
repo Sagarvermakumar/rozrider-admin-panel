@@ -11,64 +11,67 @@ import {
   CardTitle,
 } from "@/components/ui/card"
 
-// ----------------------------
-// EOZRIDER ADMIN ANALYTICS DATA
-// ----------------------------
-export const eozriderStats = [
-  {
-    id: 1,
-    title: "Total Revenue",
-    value: "$45,231.89",
-    change: "+20.1% from last month",
-    trendingUp: true,
-    icon: CreditCard,
-    footerTitle: "Revenue growth strong",
-    footerDesc: "Payments processed across all cities",
-  },
-  {
-    id: 2,
-    title: "Active Drivers",
-    value: "2,350",
-    change: "+180.1% from last month",
-    trendingUp: true,
-    icon: Car,
-    footerTitle: "Fleet expansion successful",
-    footerDesc: "New drivers added & verified",
-  },
-  {
-    id: 3,
-    title: "Total Rides",
-    value: "12,234",
-    change: "+19% from last month",
-    trendingUp: true,
-    icon: Activity,
-    footerTitle: "Ride volume increasing",
-    footerDesc: "Peak hours show strong usage",
-  },
-  {
-    id: 4,
-    title: "Active Riders",
-    value: "573",
-    change: "+201 since last hour",
-    trendingUp: true,
-    icon: Users,
-    footerTitle: "High user engagement",
-    footerDesc: "New riders onboarding quickly",
-  },
-]
+interface DashboardStats {
+  totalUsers?: number;
+  totalDrivers?: number;
+  totalRides?: number;
+  pendingVerifications?: number;
+  revenue?: number;
+}
 
-// ----------------------------
-// MAIN COMPONENT
-// ----------------------------
-export function SectionCards() {
+export function SectionCards({ stats }: { stats?: DashboardStats }) {
+  // Map incoming stats to the card cards
+  const data = [
+    {
+      id: 1,
+      title: "Total Revenue",
+      value: stats?.revenue ? `$${stats.revenue.toLocaleString()}` : "N/A",
+      change: "+20.1% from last month", // Placeholder - backend API for trends not specified
+      trendingUp: true,
+      icon: CreditCard,
+      footerTitle: "Revenue growth strong",
+      footerDesc: "Payments processed across all cities",
+    },
+    {
+      id: 2,
+      title: "Active Drivers",
+      value: stats?.totalDrivers?.toLocaleString() || "0",
+      change: "+180.1% from last month",
+      trendingUp: true,
+      icon: Car,
+      footerTitle: "Fleet expansion successful",
+      footerDesc: "New drivers added & verified",
+    },
+    {
+      id: 3,
+      title: "Total Rides",
+      value: stats?.totalRides?.toLocaleString() || "0",
+      change: "+19% from last month",
+      trendingUp: true,
+      icon: Activity,
+      footerTitle: "Ride volume increasing",
+      footerDesc: "Peak hours show strong usage",
+    },
+    {
+      id: 4,
+      title: "Total Users",
+      value: stats?.totalUsers?.toLocaleString() || "0",
+      change: "+201 since last hour",
+      trendingUp: true,
+      icon: Users,
+      footerTitle: "High user engagement",
+      footerDesc: "New riders onboarding quickly",
+    },
+  ]
+
   return (
     <div className="*:data-[slot=card]:from-primary/5 *:data-[slot=card]:to-card 
       dark:*:data-[slot=card]:bg-card grid lg:grid-cols-2 sm:grid-cols-1  
-      gap-4 *:data-[slot=card]:bg-gradient-to-t *:data-[slot=card]:shadow-xs 
+      gap-4 *:data-[slot=card]:bg-linear-to-t *:data-[slot=card]:shadow-xs 
       mt-6 @xl/main:grid-cols-2 @5xl/main:grid-cols-4"
     >
 
-      {eozriderStats.map((item) => {
+      {data.map((item) => {
         const ArrowIcon = item.trendingUp ? TrendingUp : TrendingDown
         const StatIcon = item.icon
 

@@ -3,21 +3,29 @@
 import { ColumnDef } from "@tanstack/react-table"
 import { Badge } from "@/components/ui/badge"
 import { Checkbox } from "@/components/ui/checkbox"
-import { Customer } from "@/constants/customers"
 import { DataTableColumnHeader } from "@/components/ui/data-table/data-table-column-header"
 import { Button } from "@/components/ui/button"
-import { MoreHorizontal } from "lucide-react"
-import {
-    DropdownMenu,
-    DropdownMenuContent,
-    DropdownMenuItem,
-    DropdownMenuLabel,
-    DropdownMenuTrigger,
-} from "@/components/ui/dropdown-menu"
-import { CustomersSheet } from "./customers-sheet" // Will create this next
-import { useState } from "react"
-import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet"
+import { Eye } from "lucide-react"
+import Link from "next/link"
 
+export type Customer = {
+    id: number
+    name: string
+    email: string
+    emailother?: string | null
+    phone: string | null
+    city: string | null
+    online: number
+    kyc: number
+    created_at: string
+    adres?: string | null
+    phoneother?: string | null
+    gender?: string | null
+    // Add optional fields that might be used in the Sheet but not yet in API
+    totalTrips?: number
+    walletBalance?: number
+    recentTrips?: any[]
+}
 
 export const columns: ColumnDef<Customer>[] = [
     {
@@ -59,34 +67,35 @@ export const columns: ColumnDef<Customer>[] = [
         header: "Phone",
     },
     {
-        accessorKey: "totalTrips",
+        accessorKey: "city",
         header: ({ column }) => (
-            <DataTableColumnHeader column={column} title="Trips" />
+            <DataTableColumnHeader column={column} title="City" />
         ),
     },
     {
-        accessorKey: "status",
+        accessorKey: "online",
         header: ({ column }) => (
             <DataTableColumnHeader column={column} title="Status" />
         ),
         cell: ({ row }) => {
-            const status = row.getValue("status") as string
+            const isOnline = row.getValue("online") as number
             return (
                 <Badge
-                    variant={
-                        status === "active"
-                            ? "default"
-                            : status === "inactive"
-                                ? "secondary"
-                                : "destructive"
-                    }
+                    variant={isOnline === 1 ? "default" : "secondary"}
                 >
-                    {status}
+                    {isOnline === 1 ? "Online" : "Offline"}
                 </Badge>
             )
         },
-        filterFn: (row, id, value) => {
-            return value.includes(row.getValue(id))
+    },
+    {
+        accessorKey: "created_at",
+        header: ({ column }) => (
+            <DataTableColumnHeader column={column} title="Joined" />
+        ),
+        cell: ({ row }) => {
+            const date = new Date(row.getValue("created_at"))
+            return <div>{date.toLocaleDateString()}</div>
         },
     },
     {
@@ -94,16 +103,14 @@ export const columns: ColumnDef<Customer>[] = [
         cell: ({ row }) => {
             const customer = row.original
 
-            // We'll wrap this in a component to handle state properly if needed, but for now direct Sheet usage
             return (
-                <div className="p-3" >
-
-                <CustomersSheet customer={customer}>
-                    <Button variant="ghost" className="h-8 w-8 p-0">
-                        <span className="sr-only">Open menu</span>
-                        <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                </CustomersSheet>
+                <div className="flex justify-end p-2">
+                    <Link href={`/dashboard/customers/${customer.id}`}>
+                        <Button variant="ghost" size="icon" className="h-8 w-8 hover:bg-muted">
+                            <Eye className="h-4 w-4 text-muted-foreground" />
+                            <span className="sr-only">View Details</span>
+                        </Button>
+                    </Link>
                 </div>
             )
         },

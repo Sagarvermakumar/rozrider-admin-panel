@@ -1,149 +1,175 @@
 "use client";
 
-import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
+import { useGetProfileQuery, useUpdatePasswordMutation, useLogoutMutation } from "@/redux/services/adminApi";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { Switch } from "@/components/ui/switch";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Label } from "@/components/ui/label";
+import { toast } from "sonner";
+import { useState } from "react";
+import { Loader2, LogOut } from "lucide-react";
+import { Separator } from "@/components/ui/separator";
+import { useRouter } from "next/navigation";
 
-import { User, Phone, Mail, Settings, Shield, Bell, Star, Car } from "lucide-react";
+export default function ProfilePage() {
+  const { data, isLoading, error } = useGetProfileQuery(undefined);
+  const admin = data?.admin;
+  const router = useRouter();
 
-export default function AdminProfilePage() {
+  const [updatePassword, { isLoading: isUpdating }] = useUpdatePasswordMutation();
+  const [logout, { isLoading: isLoggingOut }] = useLogoutMutation();
+  const [newPassword, setNewPassword] = useState("");
+
+  const handleLogout = async () => {
+    try {
+      await logout(undefined).unwrap();
+      localStorage.removeItem("token");
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+      toast.success("Logged out successfully");
+      router.push("/login");
+    } catch (error) {
+      // Even if API fails, clear local state and redirect to be safe
+      localStorage.removeItem("token");
+      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:01 GMT";
+      toast.error("Logged out (session cleared)");
+      router.push("/login");
+    }
+  };
+
+  const handlePasswordUpdate = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (newPassword.length < 6) {
+      toast.error("Password must be at least 6 characters");
+      return;
+    }
+    try {
+      await updatePassword({ password: newPassword }).unwrap();
+      toast.success("Password updated successfully");
+      setNewPassword("");
+    } catch (err: any) {
+      toast.error(err?.data?.message || "Failed to update password");
+    }
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex h-full items-center justify-center p-6">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      </div>
+    );
+  }
+
+  if (error) return <div className="p-8">Error loading profile</div>;
+
+  const joinedDate = admin?.created_at ? new Date(admin.created_at).toLocaleDateString() : "N/A";
+
   return (
-    <div className="w-full flex flex-col space-y-6 px-3 py-6">
-
-      {/* ================= HEADER ================= */}
-      <Card className="w-full bg-gradient-to-b from-[#111] to-[#0c0c0c] border-white/10">
-        <CardContent className="flex flex-col sm:flex-row items-center gap-6 py-6">
-          
-          <Avatar className="h-24 w-24 border border-white/20">
-            <AvatarImage src="https://api.dicebear.com/7.x/identicon/svg?seed=admin" />
-            <AvatarFallback>AD</AvatarFallback>
-          </Avatar>
-
-          <div className="space-y-1 text-center sm:text-left">
-            <h2 className="text-2xl font-bold">Admin - RozRider</h2>
-            <p className="text-muted-foreground">System Administrator</p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* ================= STATS CARDS ================= */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 w-full">
-
-        <Card className="bg-[#111] border-white/10">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Total Trips</CardTitle>
-            <Car className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">1,240</p>
-            <p className="text-xs text-muted-foreground">All-time</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#111] border-white/10">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Total Earnings</CardTitle>
-            <Star className="h-5 w-5 text-muted-foreground" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">₹ 4,52,300</p>
-            <p className="text-xs text-muted-foreground">This year</p>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-[#111] border-white/10">
-          <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle>Rating</CardTitle>
-            <Star className="h-5 w-5 text-yellow-400" />
-          </CardHeader>
-          <CardContent>
-            <p className="text-3xl font-bold">4.9</p>
-            <p className="text-xs text-muted-foreground">Driver & Rider Feedback</p>
-          </CardContent>
-        </Card>
-
+    <div className="flex-1 space-y-6 p-4 pt-6 max-w-5xl mx-auto">
+      <div className="flex flex-col space-y-2">
+        <h2 className="text-2xl font-bold tracking-tight">Admin Profile</h2>
+        <p className="text-sm text-muted-foreground">Manage your account settings and security preferences.</p>
       </div>
 
-      {/* ================= PERSONAL INFO ================= */}
-      <Card className="bg-[#111] border-white/10">
-        <CardHeader>
-          <CardTitle>Personal Information</CardTitle>
-        </CardHeader>
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
 
-        <CardContent className="space-y-4">
-          <div className="grid sm:grid-cols-2 gap-4">
-            <div>
-              <Label>Name</Label>
-              <Input placeholder="Admin Name" defaultValue="Admin" />
+        {/* Left Column: Personal Info */}
+        <Card className="md:col-span-2 border-neutral-200 dark:border-neutral-800 bg-black/40 backdrop-blur-sm">
+          <CardHeader>
+            <CardTitle>Personal Information</CardTitle>
+            <CardDescription>Your admin account details.</CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-6">
+            <div className="flex items-center gap-6">
+              <Avatar className="h-20 w-20 border-2 border-muted">
+                <AvatarImage src="/avatars/admin.png" />
+                <AvatarFallback className="text-xl">{admin?.name?.charAt(0).toUpperCase() || "A"}</AvatarFallback>
+              </Avatar>
+              <div className="space-y-1">
+                <h3 className="font-medium text-lg">{admin?.name}</h3>
+                <p className="text-sm text-muted-foreground">{admin?.email}</p>
+                <div className="flex items-center gap-2 mt-2">
+                  <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-primary text-primary-foreground hover:bg-primary/80">
+                    Admin
+                  </span>
+                  <span className="inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold transition-colors focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2 border-transparent bg-green-500/15 text-green-500 hover:bg-green-500/25">
+                    Active
+                  </span>
+                </div>
+              </div>
             </div>
 
-            <div>
-              <Label>Email</Label>
-              <Input type="email" placeholder="admin@rozrider.com" defaultValue="admin@rozrider.com" />
+            <Separator />
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="name">Full Name</Label>
+                <Input id="name" value={admin?.name || ''} readOnly className="bg-muted/50" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="email">Email Address</Label>
+                <Input id="email" value={admin?.email || ''} readOnly className="bg-muted/50" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="role">Role</Label>
+                <Input id="role" value="Super Admin" readOnly className="bg-muted/50" />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="joined">Member Since</Label>
+                <Input id="joined" value={joinedDate} readOnly className="bg-muted/50" />
+              </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div>
-              <Label>Phone</Label>
-              <Input placeholder="+91 9876543210" defaultValue="+91 90XXXXXXXX" />
-            </div>
+        {/* Right Column: Security & Actions */}
+        <div className="space-y-6">
+          <Card className="border-neutral-200 dark:border-neutral-800 bg-black/40 backdrop-blur-sm h-fit">
+            <CardHeader>
+              <CardTitle>Security</CardTitle>
+              <CardDescription>Update your password</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <form onSubmit={handlePasswordUpdate} className="space-y-4">
+                <div className="space-y-2">
+                  <Label htmlFor="new-password">New Password</Label>
+                  <Input
+                    id="new-password"
+                    type="password"
+                    placeholder="Enter new password"
+                    value={newPassword}
+                    onChange={(e) => setNewPassword(e.target.value)}
+                    minLength={6}
+                  />
+                </div>
+                <Button type="submit" className="w-full" disabled={isUpdating}>
+                  {isUpdating ? (
+                    <>
+                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      Updating...
+                    </>
+                  ) : (
+                    "Update Password"
+                  )}
+                </Button>
+              </form>
+            </CardContent>
+          </Card>
 
-            <div>
-              <Label>Role</Label>
-              <Input disabled value="Administrator" className="opacity-70" />
-            </div>
-          </div>
-
-          <Button className="w-full sm:w-auto mt-4">Save Changes</Button>
-        </CardContent>
-      </Card>
-
-      {/* ================= SETTINGS ================= */}
-      <Card className="bg-[#111] border-white/10">
-        <CardHeader>
-          <CardTitle>Settings</CardTitle>
-        </CardHeader>
-
-        <CardContent className="space-y-6">
-
-          {/* Notifications */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium flex items-center gap-2">
-                <Bell className="h-4 w-4" /> Notifications
-              </p>
-              <p className="text-xs text-muted-foreground">Receive updates & alerts</p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-
-          {/* Security */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium flex items-center gap-2">
-                <Shield className="h-4 w-4" /> Login Security
-              </p>
-              <p className="text-xs text-muted-foreground">Enable 2-factor authentication</p>
-            </div>
-            <Switch />
-          </div>
-
-          {/* System Settings */}
-          <div className="flex items-center justify-between">
-            <div>
-              <p className="font-medium flex items-center gap-2">
-                <Settings className="h-4 w-4" /> Dark Mode
-              </p>
-              <p className="text-xs text-muted-foreground">Theme based UI</p>
-            </div>
-            <Switch defaultChecked />
-          </div>
-
-        </CardContent>
-      </Card>
-
+          <Card className="border-neutral-200 dark:border-neutral-800 bg-black/40 backdrop-blur-sm h-fit">
+            <CardHeader>
+              <CardTitle className="text-red-500">Account Actions</CardTitle>
+              <CardDescription>Sign out from your session</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <Button variant="outline" className="w-full gap-2 border-red-500/50 text-red-500 hover:text-red-500 hover:bg-red-500/10" onClick={handleLogout} disabled={isLoggingOut}>
+                {isLoggingOut ? <Loader2 className="h-4 w-4 animate-spin" /> : <LogOut className="h-4 w-4" />}
+                Logout
+              </Button>
+            </CardContent>
+          </Card>
+        </div>
+      </div>
     </div>
   );
 }
